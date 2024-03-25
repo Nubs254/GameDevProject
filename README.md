@@ -1,1 +1,1 @@
-# GAmeDevProject
+# GameDevProject
