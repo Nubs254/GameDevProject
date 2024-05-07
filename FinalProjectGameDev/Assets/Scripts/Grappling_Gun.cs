@@ -5,7 +5,6 @@ public class Grappling_Gun : MonoBehaviour
     [Header("Scripts Ref:")]
     public Tutorial_GrapplingRope grappleRope;
 
-
     [Header("Layers Settings:")]
     [SerializeField] private bool grappleToAll = false;
     [SerializeField] private int grappableLayerNumber = 9;
@@ -50,11 +49,13 @@ public class Grappling_Gun : MonoBehaviour
     [HideInInspector] public Vector2 grappleDistanceVector;
     [SerializeField] PlayerMovement playerCreature;
 
+    [HideInInspector] public Transform attachedPlatform; // Track the attached platform
+    [HideInInspector] public Vector2 attachmentPoint; // Track the attachment point
+
     private void Start()
     {
         grappleRope.enabled = false;
         m_springJoint2D.enabled = false;
-
     }
 
     private void Update()
@@ -65,11 +66,10 @@ public class Grappling_Gun : MonoBehaviour
         }
         else if (Input.GetKey(KeyCode.Mouse0))
         {
-
             if (grappleRope.enabled)
             {
                 RotateGun(grapplePoint, false);
-                playerCreature.canJump = false;
+                UpdateGrapplePointOnMovingPlatform();
             }
             else
             {
@@ -95,49 +95,64 @@ public class Grappling_Gun : MonoBehaviour
         }
         else
         {
-            
             Vector2 mousePos = m_camera.ScreenToWorldPoint(Input.mousePosition);
             RotateGun(mousePos, true);
-            
         }
-        
     }
-
-    void RotateGun(Vector3 lookPoint, bool allowRotationOverTime)
+    void UpdateGrapplePointOnMovingPlatform()
 {
-    // Get the position of the gunPivot in world space
-    Vector3 gunPosition = gunPivot.position;
-
-    // Get the direction vector from gunPivot to lookPoint
-    Vector3 direction = lookPoint - gunPosition;
-
-    // Correct the direction vector based on the parent's scale
-    Vector3 correctedDirection = new Vector3(direction.x / Mathf.Abs(transform.lossyScale.x), direction.y / Mathf.Abs(transform.lossyScale.y), direction.z / Mathf.Abs(transform.lossyScale.z));
-
-    // Calculate the angle based on the corrected direction vector
-    float angle = Mathf.Atan2(correctedDirection.y, correctedDirection.x) * Mathf.Rad2Deg;
-
-    // Adjust the angle if the x scale is negative
-    if (transform.lossyScale.x < 0)
+    // Check if the grapple is attached to a moving platform
+    if (attachedPlatform != null && attachedPlatform.GetComponent<Rigidbody2D>() != null)
     {
-        angle += 180f;
-    }
+        // Get the velocity of the platform
+        Vector2 platformVelocity = attachedPlatform.GetComponent<Rigidbody2D>().velocity;
 
-    // Perform rotation based on conditions
-    if (rotateOverTime && allowRotationOverTime)
-    {
-        // Smoothly rotate over time using Lerp
-        gunPivot.rotation = Quaternion.Lerp(gunPivot.rotation, Quaternion.AngleAxis(angle, Vector3.forward), Time.deltaTime * rotationSpeed);
-    }
-    else
-    {
-        // Set the rotation immediately
-        gunPivot.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        // Calculate the new position of the grapple point based on platform velocity
+        Vector2 newGrapplePoint = grapplePoint + platformVelocity * Time.deltaTime;
+
+        // Calculate the difference between the new position and the previous position
+        Vector2 deltaGrapplePoint = newGrapplePoint - grapplePoint;
+
+        // Update the grapple point
+        grapplePoint = newGrapplePoint;
+
+        // Update the attachment point
+        attachmentPoint += deltaGrapplePoint;
     }
 }
+    void RotateGun(Vector3 lookPoint, bool allowRotationOverTime)
+    {
+        // Get the position of the gunPivot in world space
+        Vector3 gunPosition = gunPivot.position;
 
+        // Get the direction vector from gunPivot to lookPoint
+        Vector3 direction = lookPoint - gunPosition;
 
-    
+        // Correct the direction vector based on the parent's scale
+        Vector3 correctedDirection = new Vector3(direction.x / Mathf.Abs(transform.lossyScale.x), direction.y / Mathf.Abs(transform.lossyScale.y), direction.z / Mathf.Abs(transform.lossyScale.z));
+
+        // Calculate the angle based on the corrected direction vector
+        float angle = Mathf.Atan2(correctedDirection.y, correctedDirection.x) * Mathf.Rad2Deg;
+
+        // Adjust the angle if the x scale is negative
+        if (transform.lossyScale.x < 0)
+        {
+            angle += 180f;
+        }
+
+        // Perform rotation based on conditions
+        if (rotateOverTime && allowRotationOverTime)
+        {
+            // Smoothly rotate over time using Lerp
+            gunPivot.rotation = Quaternion.Lerp(gunPivot.rotation, Quaternion.AngleAxis(angle, Vector3.forward), Time.deltaTime * rotationSpeed);
+        }
+        else
+        {
+            // Set the rotation immediately
+            gunPivot.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        }
+    }
+
     void SetGrapplePoint()
     {
         Vector2 distanceVector = m_camera.ScreenToWorldPoint(Input.mousePosition) - gunPivot.position;
@@ -151,6 +166,10 @@ public class Grappling_Gun : MonoBehaviour
                     grapplePoint = _hit.point;
                     grappleDistanceVector = grapplePoint - (Vector2)gunPivot.position;
                     grappleRope.enabled = true;
+
+                    // Update attached platform and attachment point
+                    attachedPlatform = _hit.transform;
+                    attachmentPoint = _hit.point;
                 }
             }
         }
@@ -195,8 +214,4 @@ public class Grappling_Gun : MonoBehaviour
             }
         }
     }
-
-
-    
-
 }

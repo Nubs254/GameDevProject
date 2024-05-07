@@ -45,3 +45,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerCreature: {fileID: 0}
+  grapplingGun: {fileID: 0}
+  inputHorizontal: 0

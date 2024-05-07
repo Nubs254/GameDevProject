@@ -2,35 +2,34 @@ using UnityEngine;
 
 public class Tutorial_GrapplingRope : MonoBehaviour
 {
-    [Header("General Refernces:")]
+    [Header("General References:")]
     public Grappling_Gun grapplingGun;
     public LineRenderer m_lineRenderer;
 
     [Header("General Settings:")]
-    [SerializeField] private int percision = 40;
+    [SerializeField] private int precision = 40;
     [Range(0, 20)] [SerializeField] private float straightenLineSpeed = 5;
 
     [Header("Rope Animation Settings:")]
     public AnimationCurve ropeAnimationCurve;
-    [Range(0.01f, 4)] [SerializeField] private float StartWaveSize = 2;
+    [Range(0.01f, 4)] [SerializeField] private float startWaveSize = 2;
     float waveSize = 0;
 
     [Header("Rope Progression:")]
     public AnimationCurve ropeProgressionCurve;
     [SerializeField] [Range(1, 50)] private float ropeProgressionSpeed = 1;
-    [SerializeField] PlayerMovement playerCreature;
     float moveTime = 0;
 
     [HideInInspector] public bool isGrappling = true;
 
-    bool strightLine = true;
+    bool straightLine = true;
 
     private void OnEnable()
     {
         moveTime = 0;
-        m_lineRenderer.positionCount = percision;
-        waveSize = StartWaveSize;
-        strightLine = false;
+        m_lineRenderer.positionCount = precision;
+        waveSize = startWaveSize;
+        straightLine = false;
 
         LinePointsToFirePoint();
 
@@ -45,7 +44,7 @@ public class Tutorial_GrapplingRope : MonoBehaviour
 
     private void LinePointsToFirePoint()
     {
-        for (int i = 0; i < percision; i++)
+        for (int i = 0; i < precision; i++)
         {
             m_lineRenderer.SetPosition(i, grapplingGun.firePoint.position);
         }
@@ -59,11 +58,11 @@ public class Tutorial_GrapplingRope : MonoBehaviour
 
     void DrawRope()
     {
-        if (!strightLine)
+        if (!straightLine)
         {
-            if (m_lineRenderer.GetPosition(percision - 1).x == grapplingGun.grapplePoint.x)
+            if (m_lineRenderer.GetPosition(precision - 1).x == grapplingGun.grapplePoint.x)
             {
-                strightLine = true;
+                straightLine = true;
             }
             else
             {
@@ -76,9 +75,8 @@ public class Tutorial_GrapplingRope : MonoBehaviour
             {
                 grapplingGun.Grapple();
                 isGrappling = true;
-                playerCreature.canJump = false;
-
             }
+
             if (waveSize > 0)
             {
                 waveSize -= Time.deltaTime * straightenLineSpeed;
@@ -88,18 +86,21 @@ public class Tutorial_GrapplingRope : MonoBehaviour
             {
                 waveSize = 0;
 
-                if (m_lineRenderer.positionCount != 2) { m_lineRenderer.positionCount = 2; }
+                if (m_lineRenderer.positionCount != 2)
+                {
+                    m_lineRenderer.positionCount = 2;
+                }
 
-                DrawRopeNoWaves();
+                DrawRopeToAttachmentPoint();
             }
         }
     }
 
     void DrawRopeWaves()
     {
-        for (int i = 0; i < percision; i++)
+        for (int i = 0; i < precision; i++)
         {
-            float delta = (float)i / ((float)percision - 1f);
+            float delta = (float)i / ((float)precision - 1f);
             Vector2 offset = Vector2.Perpendicular(grapplingGun.grappleDistanceVector).normalized * ropeAnimationCurve.Evaluate(delta) * waveSize;
             Vector2 targetPosition = Vector2.Lerp(grapplingGun.firePoint.position, grapplingGun.grapplePoint, delta) + offset;
             Vector2 currentPosition = Vector2.Lerp(grapplingGun.firePoint.position, targetPosition, ropeProgressionCurve.Evaluate(moveTime) * ropeProgressionSpeed);
@@ -108,10 +109,9 @@ public class Tutorial_GrapplingRope : MonoBehaviour
         }
     }
 
-    void DrawRopeNoWaves()
+    void DrawRopeToAttachmentPoint()
     {
         m_lineRenderer.SetPosition(0, grapplingGun.firePoint.position);
-        m_lineRenderer.SetPosition(1, grapplingGun.grapplePoint);
+        m_lineRenderer.SetPosition(1, grapplingGun.attachmentPoint);
     }
-
 }
